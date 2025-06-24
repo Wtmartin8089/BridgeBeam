@@ -1,0 +1,15 @@
+<link rel="manifest" href="/manifest.json" />
+<link rel="icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+<meta name="theme-color" content="#0d6efd" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log("✅ Service Worker registered", reg))
+      .catch(err => console.error("❌ Service Worker failed", err));
+  }
+</script>
