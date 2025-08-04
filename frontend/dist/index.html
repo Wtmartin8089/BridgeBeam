@@ -1,15 +1,36 @@
-<link rel="manifest" href="/manifest.json" />
-<link rel="icon" href="/favicon.ico" />
-<link rel="apple-touch-icon" href="/icons/icon-192.png" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BridgeBeam - Cross-platform Encrypted File Sharing</title>
+  <meta name="description" content="Cross-platform encrypted file sharing app">
+  
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
-<meta name="theme-color" content="#0d6efd" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0d6efd" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+</head>
+<body>
+  <div id="root">
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;">
+      <div style="text-align: center;">
+        <h1 style="color: #0d6efd; margin-bottom: 20px;">BridgeBeam</h1>
+        <p style="color: #6c757d; margin-bottom: 30px;">Cross-platform encrypted file sharing app</p>
+        <div style="color: #28a745;">✅ App loaded successfully</div>
+      </div>
+    </div>
+  </div>
 
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(reg => console.log("✅ Service Worker registered", reg))
-      .catch(err => console.error("❌ Service Worker failed", err));
-  }
-</script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log("✅ Service Worker registered", reg))
+        .catch(err => console.error("❌ Service Worker failed", err));
+    }
+  </script>
+</body>
+</html>

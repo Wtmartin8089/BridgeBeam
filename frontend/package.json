@@ -1,0 +1,19 @@
+{
+  "name": "bridgebeam-frontend",
+  "version": "1.0.0",
+  "description": "BridgeBeam PWA Frontend",
+  "main": "index.html",
+  "scripts": {
+    "build": "cp -r dist/* .",
+    "start": "python -m http.server 8000 -d dist",
+    "dev": "python -m http.server 8000 -d dist"
+  },
+  "keywords": ["pwa", "file-sharing", "encryption"],
+  "author": "BridgeBeam Team",
+  "license": "MIT",
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

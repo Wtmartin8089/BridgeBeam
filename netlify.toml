@@ -1,0 +1,20 @@
+[build]
+  publish = "frontend/dist"
+  command = "echo 'Static build ready'"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production]
+  publish = "frontend/dist"
+
+[context.deploy-preview]
+  publish = "frontend/dist"
+
+[context.branch-deploy]
+  publish = "frontend/dist"
