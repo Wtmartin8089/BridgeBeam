@@ -1,0 +1,32 @@
+# Virtual environments
+.venv/
+venv/
+env/
+node_modules/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Build directories
+dist/
+build/
+*.egg-info/
+.dart_tool/
+.flutter-plugins*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
