@@ -319,45 +319,39 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
     <script>
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(reg => console.log('✅ Service Worker registered', reg))
-                .catch(err => console.error('❌ Service Worker failed', err));
-        }
+        // Change this to your deployed signaling server URL for production
+        const SIGNALING_SERVER = 'http://localhost:8000';
+        const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
+        const CHUNK_SIZE = 65536; // 64KB
 
         // Global state
         let selectedFiles = [];
         let connectionCode = null;
         let peerConnection = null;
         let dataChannel = null;
+        let role = null; // 'sender' | 'receiver'
+        let icePollIndex = 0;
+        let icePollTimer = null;
 
-        // File handling
+        // Receiving state: fileIndex -> {meta, chunks, received}
+        const receivingFiles = {};
+
+        // --- File handling ---
         const fileInput = document.getElementById('fileInput');
         const dropZone = document.getElementById('dropZone');
 
-        fileInput.addEventListener('change', handleFileSelect);
+        fileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files)));
 
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('dragover');
         });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
-
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
-            const files = Array.from(e.dataTransfer.files);
-            handleFiles(files);
+            handleFiles(Array.from(e.dataTransfer.files));
         });
-
-        function handleFileSelect(e) {
-            const files = Array.from(e.target.files);
-            handleFiles(files);
-        }
 
         function handleFiles(files) {
             selectedFiles = files;
@@ -368,18 +362,17 @@
         function displaySelectedFiles() {
             const container = document.getElementById('selectedFiles');
             container.innerHTML = '';
-
             selectedFiles.forEach((file, index) => {
-                const fileItem = document.createElement('div');
-                fileItem.className = 'file-item';
-                fileItem.innerHTML = `
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `
                     <div class="file-info">
                         <div class="file-name">${file.name}</div>
                         <div class="file-size">${formatFileSize(file.size)}</div>
                     </div>
-                    <button onclick="removeFile(${index})" style="background: #ff5252; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">✕</button>
+                    <button onclick="removeFile(${index})" style="background:#ff5252;color:white;border:none;padding:8px 15px;border-radius:5px;cursor:pointer;">✕</button>
                 `;
-                container.appendChild(fileItem);
+                container.appendChild(item);
             });
         }
 
@@ -397,213 +390,322 @@
             return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
         }
 
-        // Mode switching
+        // --- Mode switching ---
         function switchMode(mode) {
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-
-            document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(`${mode}-section`).classList.add('active');
-
             clearStatus();
         }
 
-        // Connection code generation
-        function generateConnectionCode() {
-            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-            connectionCode = code;
+        // --- WebRTC helpers ---
+        function createPeerConnection() {
+            const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-            document.getElementById('codeDisplay').textContent = code;
+            pc.onicecandidate = async (event) => {
+                if (!event.candidate) return;
+                try {
+                    await fetch(`${SIGNALING_SERVER}/api/session/${connectionCode}/ice/${role}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            candidate: event.candidate.candidate,
+                            sdpMid: event.candidate.sdpMid,
+                            sdpMLineIndex: event.candidate.sdpMLineIndex,
+                        }),
+                    });
+                } catch (e) { console.warn('ICE send error', e); }
+            };
+
+            pc.onconnectionstatechange = () => {
+                if (pc.connectionState === 'failed') {
+                    showStatus('Connection failed. Please try again.', 'error');
+                }
+            };
+
+            return pc;
+        }
+
+        async function pollIce(fromRole) {
+            try {
+                const res = await fetch(`${SIGNALING_SERVER}/api/session/${connectionCode}/ice/${fromRole}?after=${icePollIndex}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                for (const c of data.candidates) {
+                    try { await peerConnection.addIceCandidate(new RTCIceCandidate(c)); }
+                    catch (e) { console.warn('addIceCandidate failed', e); }
+                }
+                icePollIndex = data.total;
+            } catch (e) { /* network blip, will retry */ }
+        }
+
+        // --- Sender flow ---
+        async function generateConnectionCode() {
+            // Create session on server
+            let data;
+            try {
+                const res = await fetch(`${SIGNALING_SERVER}/api/session`, { method: 'POST' });
+                data = await res.json();
+            } catch (e) {
+                showStatus('Cannot reach signaling server. Is the backend running?', 'error');
+                return;
+            }
+
+            connectionCode = data.code;
+            role = 'sender';
+
+            document.getElementById('codeDisplay').textContent = connectionCode;
             document.getElementById('connectionCode').style.display = 'block';
 
-            // Generate QR code
             const qrContainer = document.getElementById('qrCode');
             qrContainer.innerHTML = '';
             QRCode.toCanvas(
                 document.createElement('canvas'),
-                `${window.location.origin}?code=${code}`,
+                `${window.location.origin}?code=${connectionCode}`,
                 { width: 200 },
-                (error, canvas) => {
-                    if (!error) qrContainer.appendChild(canvas);
-                }
+                (err, canvas) => { if (!err) qrContainer.appendChild(canvas); }
             );
 
-            // Store in localStorage for signaling (simple approach)
-            localStorage.setItem(`bridgebeam_${code}`, JSON.stringify({
-                files: selectedFiles.map(f => ({ name: f.name, size: f.size, type: f.type })),
-                timestamp: Date.now()
-            }));
+            // Create peer connection, data channel, and offer
+            peerConnection = createPeerConnection();
+            dataChannel = peerConnection.createDataChannel('files');
+            setupSenderChannel(dataChannel);
 
-            showStatus('Connection code generated! Share it with the receiver.', 'success');
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
 
-            // Clean up old codes (>5 minutes)
-            cleanupOldCodes();
+            await fetch(`${SIGNALING_SERVER}/api/session/${connectionCode}/offer`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sdp: offer.sdp, type: offer.type }),
+            });
 
-            // Start waiting for connection
-            waitForConnection(code);
-        }
-
-        function waitForConnection(code) {
             showStatus('Waiting for receiver to connect...', 'info');
 
-            // In a real app, this would use WebRTC signaling
-            // For demo, we'll use localStorage polling (not production-ready)
-            const checkInterval = setInterval(() => {
-                const receiverSignal = localStorage.getItem(`bridgebeam_receiver_${code}`);
-                if (receiverSignal) {
-                    clearInterval(checkInterval);
-                    initiateTransfer();
-                }
+            // Poll for answer SDP
+            const answerPoll = setInterval(async () => {
+                try {
+                    const res = await fetch(`${SIGNALING_SERVER}/api/session/${connectionCode}/answer`);
+                    if (res.ok) {
+                        const answer = await res.json();
+                        clearInterval(answerPoll);
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+                        // Start polling for receiver's ICE candidates
+                        icePollIndex = 0;
+                        icePollTimer = setInterval(() => pollIce('receiver'), 1000);
+                    }
+                } catch (e) { /* still waiting */ }
             }, 1000);
 
-            // Timeout after 5 minutes
             setTimeout(() => {
-                clearInterval(checkInterval);
+                clearInterval(answerPoll);
                 if (!dataChannel || dataChannel.readyState !== 'open') {
                     showStatus('Connection timeout. Please try again.', 'error');
                 }
             }, 300000);
         }
 
-        function cleanupOldCodes() {
-            const fiveMinutesAgo = Date.now() - 300000;
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('bridgebeam_')) {
-                    try {
-                        const data = JSON.parse(localStorage.getItem(key));
-                        if (data.timestamp < fiveMinutesAgo) {
-                            localStorage.removeItem(key);
+        function setupSenderChannel(dc) {
+            dc.onopen = () => {
+                clearInterval(icePollTimer);
+                showStatus('Receiver connected! Sending files...', 'success');
+                sendAllFiles();
+            };
+            dc.onerror = (e) => showStatus('Transfer error: ' + e.message, 'error');
+        }
+
+        async function sendAllFiles() {
+            for (let i = 0; i < selectedFiles.length; i++) {
+                await sendFile(selectedFiles[i], i);
+            }
+            showStatus('All files sent successfully!', 'success');
+            dataChannel.close();
+        }
+
+        function sendFile(file, fileIndex) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const buffer = e.target.result;
+                    const totalChunks = Math.ceil(buffer.byteLength / CHUNK_SIZE);
+
+                    // Send metadata first
+                    dataChannel.send(JSON.stringify({
+                        type: 'meta',
+                        name: file.name,
+                        size: file.size,
+                        mimeType: file.type,
+                        totalChunks,
+                        fileIndex,
+                    }));
+
+                    for (let chunk = 0; chunk < totalChunks; chunk++) {
+                        // Backpressure: wait if buffer is too full
+                        while (dataChannel.bufferedAmount > CHUNK_SIZE * 8) {
+                            await new Promise(r => setTimeout(r, 50));
                         }
-                    } catch (e) {
-                        localStorage.removeItem(key);
+                        const start = chunk * CHUNK_SIZE;
+                        dataChannel.send(buffer.slice(start, start + CHUNK_SIZE));
                     }
-                }
+                    resolve();
+                };
+                reader.readAsArrayBuffer(file);
             });
         }
 
-        // Receiver functions
-        function connectToSender() {
-            const code = document.getElementById('codeInput').value.toUpperCase();
-
+        // --- Receiver flow ---
+        async function connectToSender() {
+            const code = document.getElementById('codeInput').value.toUpperCase().trim();
             if (code.length !== 4) {
                 showStatus('Please enter a valid 4-character code', 'error');
                 return;
             }
 
-            const senderData = localStorage.getItem(`bridgebeam_${code}`);
+            connectionCode = code;
+            role = 'receiver';
+            showStatus('Connecting...', 'info');
 
-            if (!senderData) {
-                showStatus('Invalid or expired code. Please check and try again.', 'error');
+            let offer;
+            try {
+                const res = await fetch(`${SIGNALING_SERVER}/api/session/${code}/offer`);
+                if (!res.ok) {
+                    showStatus('Invalid or expired code. Please try again.', 'error');
+                    return;
+                }
+                offer = await res.json();
+            } catch (e) {
+                showStatus('Cannot reach signaling server.', 'error');
                 return;
             }
 
-            const data = JSON.parse(senderData);
+            peerConnection = createPeerConnection();
+            peerConnection.ondatachannel = (event) => {
+                dataChannel = event.channel;
+                setupReceiverChannel(dataChannel);
+            };
 
-            // Signal that receiver is ready
-            localStorage.setItem(`bridgebeam_receiver_${code}`, JSON.stringify({
-                ready: true,
-                timestamp: Date.now()
-            }));
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
 
-            showStatus('Connecting to sender...', 'info');
-
-            // Display incoming files
-            displayIncomingFiles(data.files);
-
-            // Simulate file transfer (in real app, use WebRTC)
-            setTimeout(() => {
-                showStatus('Connected! Files are being transferred...', 'success');
-                simulateFileTransfer(data.files);
-            }, 2000);
-        }
-
-        function displayIncomingFiles(files) {
-            const container = document.getElementById('receiveFiles');
-            container.innerHTML = '<p style="margin-bottom: 15px; font-weight: bold;">Incoming files:</p>';
-
-            files.forEach((file, index) => {
-                const fileItem = document.createElement('div');
-                fileItem.className = 'file-item';
-                fileItem.innerHTML = `
-                    <div class="file-info">
-                        <div class="file-name">${file.name}</div>
-                        <div class="file-size">${formatFileSize(file.size)}</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progress-${index}" style="width: 0%"></div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(fileItem);
+            await fetch(`${SIGNALING_SERVER}/api/session/${code}/answer`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sdp: answer.sdp, type: answer.type }),
             });
+
+            showStatus('Connected! Waiting for files...', 'info');
+
+            // Poll for sender's ICE candidates
+            icePollIndex = 0;
+            icePollTimer = setInterval(() => pollIce('sender'), 1000);
         }
 
-        function initiateTransfer() {
-            showStatus('Receiver connected! Starting file transfer...', 'success');
+        function setupReceiverChannel(dc) {
+            dc.onopen = () => {
+                clearInterval(icePollTimer);
+                showStatus('Transfer started!', 'info');
+            };
 
-            // In a real implementation, this would use WebRTC DataChannel
-            // For demo purposes, we'll simulate the transfer
-            selectedFiles.forEach((file, index) => {
-                simulateFileSend(file, index);
-            });
-        }
+            dc.onmessage = (event) => {
+                if (typeof event.data === 'string') {
+                    // Metadata frame
+                    const meta = JSON.parse(event.data);
+                    if (meta.type === 'meta') {
+                        receivingFiles[meta.fileIndex] = { meta, chunks: [], received: 0 };
+                        showIncomingFile(meta);
+                    }
+                } else {
+                    // Binary chunk — assign to the last incomplete file
+                    const activeIdx = Object.keys(receivingFiles)
+                        .map(Number)
+                        .find(idx => receivingFiles[idx].received < receivingFiles[idx].meta.totalChunks);
 
-        function simulateFileSend(file, index) {
-            // Simulate file transfer with progress
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 10;
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    if (index === selectedFiles.length - 1) {
-                        showStatus('All files sent successfully!', 'success');
+                    if (activeIdx === undefined) return;
+
+                    const f = receivingFiles[activeIdx];
+                    f.chunks.push(event.data);
+                    f.received++;
+
+                    const pct = Math.round(f.received / f.meta.totalChunks * 100);
+                    const bar = document.getElementById(`progress-${activeIdx}`);
+                    if (bar) bar.style.width = pct + '%';
+
+                    if (f.received === f.meta.totalChunks) {
+                        downloadFile(activeIdx);
                     }
                 }
-            }, 200);
+            };
+
+            dc.onclose = () => showStatus('All files received!', 'success');
         }
 
-        function simulateFileTransfer(files) {
-            files.forEach((file, index) => {
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += 10;
-                    const progressBar = document.getElementById(`progress-${index}`);
-                    if (progressBar) {
-                        progressBar.style.width = progress + '%';
-                    }
-
-                    if (progress >= 100) {
-                        clearInterval(interval);
-                        if (index === files.length - 1) {
-                            showStatus('All files received successfully!', 'success');
-                        }
-                    }
-                }, 200);
-            });
+        function showIncomingFile(meta) {
+            const container = document.getElementById('receiveFiles');
+            if (!container.querySelector('p')) {
+                container.innerHTML = '<p style="margin-bottom:15px;font-weight:bold;">Incoming files:</p>';
+            }
+            const item = document.createElement('div');
+            item.className = 'file-item';
+            item.id = `file-item-${meta.fileIndex}`;
+            item.innerHTML = `
+                <div class="file-info">
+                    <div class="file-name">${meta.name}</div>
+                    <div class="file-size">${formatFileSize(meta.size)}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-${meta.fileIndex}" style="width:0%"></div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(item);
         }
 
-        // Status messages
+        function downloadFile(fileIndex) {
+            const f = receivingFiles[fileIndex];
+            const blob = new Blob(f.chunks, { type: f.meta.mimeType || 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = f.meta.name;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            const item = document.getElementById(`file-item-${fileIndex}`);
+            if (item) item.style.background = '#e8f5e9';
+        }
+
+        // --- Status ---
         function showStatus(message, type = 'info') {
-            const statusDiv = document.getElementById('status');
-            statusDiv.className = `status ${type}`;
-            statusDiv.textContent = message;
-            statusDiv.style.display = 'block';
+            const div = document.getElementById('status');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            div.style.display = 'block';
         }
 
         function clearStatus() {
             document.getElementById('status').style.display = 'none';
         }
 
-        // Check for code in URL (from QR code)
+        // --- Auto-fill code from URL (QR scan) ---
         window.addEventListener('load', () => {
             const params = new URLSearchParams(window.location.search);
             const code = params.get('code');
             if (code) {
-                switchMode('receive');
-                document.querySelectorAll('.mode-btn')[1].classList.add('active');
                 document.querySelectorAll('.mode-btn')[0].classList.remove('active');
+                document.querySelectorAll('.mode-btn')[1].classList.add('active');
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById('receive-section').classList.add('active');
                 document.getElementById('codeInput').value = code;
             }
         });
+
+        // --- Service Worker ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('✅ Service Worker registered', reg))
+                .catch(err => console.error('❌ Service Worker failed', err));
+        }
     </script>
 </body>
 </html>
