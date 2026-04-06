@@ -557,6 +557,32 @@
             transition: width 0.3s;
         }
 
+        /* ── Step label ───────────────────────────────────────── */
+        .step-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        /* ── Button spinner ───────────────────────────────────── */
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .btn-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
         /* ── Receive hint ─────────────────────────────────────── */
         .receive-hint {
             text-align: center;
@@ -730,7 +756,7 @@
     <!-- Hero -->
     <section class="hero">
         <div class="hero-badge">Free &amp; Open Source · No Install Needed</div>
-        <h1>Send Files Between iPhone &amp; Android — Without AirDrop or Apps</h1>
+        <h1>Send Files Between iPhone &amp; Android — No AirDrop. No Apps. No Friction.</h1>
         <p class="hero-sub">No cables. No apps. Just open and share.</p>
         <div class="hero-actions">
             <button class="hero-btn hero-btn-primary" onclick="heroAction('send')">
@@ -745,7 +771,7 @@
 
     <!-- Credibility strip -->
     <div class="cred-strip">
-        <p><strong>Built for quick, real-world file transfers</strong> &nbsp;·&nbsp; Simple, fast, and reliable</p>
+        <p>⚡ Trusted for fast, no-hassle file sharing across devices</p>
     </div>
 
     <!-- App Panel -->
@@ -760,17 +786,18 @@
 
             <!-- Send Section -->
             <div id="send-section" class="section active">
+                <p class="step-label">Step 1: Select a file</p>
                 <div class="file-input-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
                     <div class="file-icon">📁</div>
-                    <p><strong>Click to select files</strong></p>
-                    <p style="margin-top: 6px;">or drag and drop files here</p>
+                    <p><strong>Click or drop a file to begin</strong></p>
+                    <p style="margin-top: 6px;">Any file type · Any size</p>
                 </div>
                 <input type="file" id="fileInput" multiple>
 
                 <div id="selectedFiles" class="file-list"></div>
 
                 <button class="btn" id="generateCodeBtn" onclick="generateConnectionCode()" disabled>
-                    Generate Connection Code
+                    Create Transfer Code
                 </button>
                 <p class="btn-helper" id="generateHelper" style="display:none">Share this code with the other device</p>
 
@@ -1001,15 +1028,22 @@
 
         // --- Sender flow ---
         async function generateConnectionCode() {
+            const btn = document.getElementById('generateCodeBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="btn-spinner"></span>Preparing secure connection…';
+
             let data;
             try {
                 const res = await fetch(`${SIGNALING_SERVER}/api/session`, { method: 'POST' });
                 data = await res.json();
             } catch (e) {
+                btn.disabled = false;
+                btn.textContent = 'Create Transfer Code';
                 showStatus('Cannot reach signaling server. Is the backend running?', 'error');
                 return;
             }
 
+            btn.textContent = 'Create Transfer Code';
             connectionCode = data.code;
             role = 'sender';
 
