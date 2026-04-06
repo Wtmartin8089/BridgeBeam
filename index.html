@@ -9,7 +9,7 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
-    <meta name="theme-color" content="#4F46E5" />
+    <meta name="theme-color" content="#1E1B4B" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="Send files between iPhone and Android instantly. No cables, no accounts, no setup." />
@@ -53,53 +53,67 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px 24px;
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
+            padding: 18px 24px;
+            background: #1E1B4B;
         }
 
         .nav-logo {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 700;
-            color: var(--primary);
+            color: #fff;
             letter-spacing: -0.3px;
         }
 
         /* ── Hero ─────────────────────────────────────────────── */
         .hero {
             text-align: center;
-            padding: 72px 24px 64px;
-            background: linear-gradient(160deg, #EEF2FF 0%, #F9FAFB 60%);
-            border-bottom: 1px solid var(--border);
+            padding: 80px 24px 72px;
+            background: linear-gradient(145deg, #1E1B4B 0%, #312E81 50%, #4C1D95 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle radial glow behind content */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(ellipse, rgba(129,140,248,0.25) 0%, transparent 70%);
+            pointer-events: none;
         }
 
         .hero-badge {
             display: inline-block;
-            background: var(--primary-light);
-            color: var(--primary);
-            font-size: 0.8rem;
+            background: rgba(255,255,255,0.12);
+            color: #C7D2FE;
+            font-size: 0.78rem;
             font-weight: 600;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
-            padding: 5px 14px;
+            padding: 5px 16px;
             border-radius: 999px;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
+            border: 1px solid rgba(199,210,254,0.2);
         }
 
         .hero h1 {
-            font-size: clamp(1.9rem, 5vw, 3rem);
+            font-size: clamp(1.8rem, 5vw, 2.9rem);
             font-weight: 800;
             line-height: 1.15;
             letter-spacing: -0.5px;
-            color: var(--text);
-            max-width: 640px;
+            color: #fff;
+            max-width: 660px;
             margin: 0 auto 18px;
         }
 
         .hero-sub {
             font-size: 1.1rem;
-            color: var(--text-muted);
-            max-width: 440px;
+            color: #C7D2FE;
+            max-width: 420px;
             margin: 0 auto 40px;
         }
 
@@ -113,44 +127,73 @@
         .hero-btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            padding: 16px 32px;
+            padding: 17px 36px;
             border-radius: var(--radius);
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
             font-family: 'Inter', sans-serif;
             cursor: pointer;
             border: none;
             transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
             text-decoration: none;
+            min-width: 180px;
         }
 
         .hero-btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+            background: #818CF8;
+            color: #1E1B4B;
+            box-shadow: 0 0 0 0 rgba(129,140,248,0);
+            box-shadow: 0 4px 20px rgba(129,140,248,0.5), 0 0 40px rgba(129,140,248,0.15);
         }
 
         .hero-btn-primary:hover {
-            background: var(--primary-hover);
+            background: #A5B4FC;
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+            box-shadow: 0 8px 28px rgba(129,140,248,0.6), 0 0 60px rgba(129,140,248,0.2);
         }
 
         .hero-btn-secondary {
-            background: var(--card);
-            color: var(--primary);
-            border: 2px solid var(--primary);
+            background: transparent;
+            color: #E0E7FF;
+            border: 2px solid rgba(224,231,255,0.4);
         }
 
         .hero-btn-secondary:hover {
-            background: var(--primary-light);
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(224,231,255,0.7);
             transform: translateY(-2px);
+        }
+
+        .hero-micro {
+            margin-top: 20px;
+            font-size: 0.82rem;
+            color: rgba(199,210,254,0.65);
+            letter-spacing: 0.01em;
+        }
+
+        /* ── Credibility strip ────────────────────────────────── */
+        .cred-strip {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 24px;
+            text-align: center;
+        }
+
+        .cred-strip p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .cred-strip strong {
+            color: var(--text);
+            font-weight: 600;
         }
 
         /* ── App Panel ────────────────────────────────────────── */
         .app-section {
-            padding: 56px 24px;
+            padding: 60px 24px;
             display: flex;
             justify-content: center;
         }
@@ -159,18 +202,26 @@
             background: var(--card);
             border-radius: 20px;
             padding: 36px 32px;
-            max-width: 560px;
+            max-width: 540px;
             width: 100%;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
             border: 1px solid var(--border);
         }
 
         .app-title {
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: var(--text);
             text-align: center;
             margin-bottom: 24px;
+            letter-spacing: -0.2px;
+        }
+
+        .btn-helper {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 10px;
         }
 
         /* ── Mode selector ────────────────────────────────────── */
@@ -544,13 +595,24 @@
 
         /* ── Responsive ───────────────────────────────────────── */
         @media (max-width: 600px) {
-            .hero { padding: 52px 20px 48px; }
-            .container { padding: 24px 20px; }
-            .app-section { padding: 36px 16px; }
+            .hero { padding: 56px 20px 52px; }
+
+            /* Stack hero buttons vertically, full width */
+            .hero-actions { flex-direction: column; align-items: center; }
+            .hero-btn { width: 100%; max-width: 320px; padding: 18px 24px; font-size: 1.05rem; }
+
+            .container { padding: 24px 18px; }
+            .app-section { padding: 36px 12px; }
             .how-section, .trust-section { padding: 52px 20px; }
             .steps, .trust-cards { gap: 20px; }
             .step, .trust-card { min-width: 100%; max-width: 100%; }
             .code-display { letter-spacing: 4px; }
+
+            /* Full-width drop zone on mobile */
+            .file-input-area { padding: 44px 16px; }
+
+            /* Bigger touch target for mode buttons */
+            .mode-btn { padding: 15px 12px; }
         }
     </style>
 </head>
@@ -563,8 +625,8 @@
 
     <!-- Hero -->
     <section class="hero">
-        <div class="hero-badge">Free &amp; Open Source</div>
-        <h1>Send Files Between iPhone &amp; Android — Instantly</h1>
+        <div class="hero-badge">Free &amp; Open Source · No Install Needed</div>
+        <h1>Send Files Between iPhone &amp; Android — Without AirDrop or Apps</h1>
         <p class="hero-sub">No cables. No apps. Just open and share.</p>
         <div class="hero-actions">
             <button class="hero-btn hero-btn-primary" onclick="heroAction('send')">
@@ -574,12 +636,18 @@
                 📥 Receive File
             </button>
         </div>
+        <p class="hero-micro">No setup. Takes seconds.</p>
     </section>
+
+    <!-- Credibility strip -->
+    <div class="cred-strip">
+        <p><strong>Built for quick, real-world file transfers</strong> &nbsp;·&nbsp; Simple, fast, and reliable</p>
+    </div>
 
     <!-- App Panel -->
     <section class="app-section" id="app">
         <div class="container">
-            <p class="app-title">Transfer Files</p>
+            <p class="app-title">Start a Transfer</p>
 
             <div class="mode-selector">
                 <button class="mode-btn active" onclick="switchMode('send')">📤 Send</button>
@@ -600,6 +668,7 @@
                 <button class="btn" id="generateCodeBtn" onclick="generateConnectionCode()" disabled>
                     Generate Connection Code
                 </button>
+                <p class="btn-helper" id="generateHelper" style="display:none">Share this code with the other device</p>
 
                 <div id="connectionCode" style="display: none;">
                     <div class="connection-code">
@@ -734,6 +803,7 @@
             selectedFiles = files;
             displaySelectedFiles();
             document.getElementById('generateCodeBtn').disabled = files.length === 0;
+            document.getElementById('generateHelper').style.display = files.length === 0 ? 'none' : 'block';
         }
 
         function displaySelectedFiles() {
