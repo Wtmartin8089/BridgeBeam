@@ -26,10 +26,10 @@
             --primary:       #4F46E5;
             --primary-hover: #4338CA;
             --primary-light: #EEF2FF;
-            --text:          #111827;
-            --text-muted:    #6B7280;
-            --border:        #E5E7EB;
-            --bg:            #F9FAFB;
+            --text:          #0F172A;
+            --text-muted:    #64748B;
+            --border:        #E2E8F0;
+            --bg:            #F8FAFC;
             --card:          #ffffff;
             --success-bg:    #ECFDF5;
             --success-text:  #065F46;
@@ -37,8 +37,11 @@
             --info-text:     #1E40AF;
             --error-bg:      #FEF2F2;
             --error-text:    #991B1B;
-            --radius:        14px;
-            --radius-sm:     8px;
+            --radius:        16px;
+            --radius-sm:     10px;
+            --shadow-sm:     0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+            --shadow-md:     0 4px 16px rgba(15,23,42,0.08), 0 2px 6px rgba(15,23,42,0.05);
+            --shadow-lg:     0 12px 40px rgba(15,23,42,0.12), 0 4px 12px rgba(15,23,42,0.06);
         }
 
         body {
@@ -53,15 +56,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 18px 24px;
+            padding: 16px 24px;
             background: #1E1B4B;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
         }
 
         .nav-logo {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: #fff;
-            letter-spacing: -0.3px;
+            letter-spacing: -0.2px;
+            opacity: 0.95;
         }
 
         /* ── Hero ─────────────────────────────────────────────── */
@@ -193,27 +198,28 @@
 
         /* ── App Panel ────────────────────────────────────────── */
         .app-section {
-            padding: 60px 24px;
+            padding: 64px 24px;
             display: flex;
             justify-content: center;
+            background: var(--bg);
         }
 
         .container {
             background: var(--card);
             border-radius: 20px;
-            padding: 36px 32px;
-            max-width: 540px;
+            padding: 40px 36px;
+            max-width: 520px;
             width: 100%;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-lg);
             border: 1px solid var(--border);
         }
 
         .app-title {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: var(--text);
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             letter-spacing: -0.2px;
         }
 
@@ -227,36 +233,38 @@
         /* ── Mode selector ────────────────────────────────────── */
         .mode-selector {
             display: flex;
-            gap: 8px;
-            margin-bottom: 28px;
+            gap: 6px;
+            margin-bottom: 32px;
             background: var(--bg);
             padding: 5px;
             border-radius: var(--radius);
+            border: 1px solid var(--border);
         }
 
         .mode-btn {
             flex: 1;
-            padding: 13px 16px;
+            padding: 12px 16px;
             border: none;
             background: transparent;
             color: var(--text-muted);
             border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 600;
             font-family: 'Inter', sans-serif;
-            transition: all 0.2s;
+            transition: all 0.18s;
+            letter-spacing: -0.1px;
         }
 
         .mode-btn:hover {
             color: var(--text);
-            background: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.8);
         }
 
         .mode-btn.active {
             background: var(--card);
             color: var(--primary);
-            box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-sm);
         }
 
         /* ── Sections ─────────────────────────────────────────── */
@@ -327,34 +335,123 @@
             box-shadow: none;
         }
 
-        /* ── Connection code ──────────────────────────────────── */
+        /* ── Connection code panel ────────────────────────────── */
         .connection-code {
-            background: var(--primary-light);
-            border: 1px solid #C7D2FE;
+            background: var(--card);
+            border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 24px;
+            padding: 0;
             text-align: center;
-            margin: 20px 0;
+            margin: 24px 0 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
         }
 
-        .connection-code p {
+        .code-top {
+            padding: 24px 24px 20px;
+            background: #F8FAFF;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
             color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 4px;
+            margin-bottom: 12px;
+        }
+
+        .code-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
 
         .code-display {
-            font-size: 2.4rem;
+            font-size: 2.6rem;
             font-weight: 800;
             color: var(--primary);
-            letter-spacing: 8px;
-            margin: 10px 0;
+            letter-spacing: 10px;
+            line-height: 1;
+        }
+
+        .code-copy-btn {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid #C7D2FE;
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .code-copy-btn:hover {
+            background: #E0E7FF;
+            transform: translateY(-1px);
+        }
+
+        .code-expires {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        /* Divider between code and QR */
+        .qr-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 24px;
+            margin: 0;
+            height: 1px;
+            position: relative;
+        }
+
+        .qr-divider-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            background: var(--card);
+            padding: 0 10px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+        }
+
+        .code-bottom {
+            padding: 20px 24px 24px;
         }
 
         .qr-code {
             display: flex;
             justify-content: center;
-            margin: 16px 0;
+            margin: 0;
+        }
+
+        /* Style the canvas that QRCode.js renders */
+        .qr-code canvas {
+            border-radius: 12px;
+            padding: 12px;
+            background: #fff;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            display: block;
+        }
+
+        .qr-scan-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 14px;
         }
 
         /* ── Code input ───────────────────────────────────────── */
@@ -512,15 +609,16 @@
         .step-num {
             width: 52px;
             height: 52px;
-            background: var(--primary-light);
-            color: var(--primary);
+            background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+            color: #fff;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 800;
-            margin: 0 auto 16px;
+            margin: 0 auto 18px;
+            box-shadow: 0 4px 14px rgba(79,70,229,0.3);
         }
 
         .step h3 {
@@ -557,12 +655,18 @@
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 28px 24px;
+            padding: 32px 24px;
             flex: 1;
             min-width: 200px;
             max-width: 240px;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .trust-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
         }
 
         .trust-icon {
@@ -672,10 +776,18 @@
 
                 <div id="connectionCode" style="display: none;">
                     <div class="connection-code">
-                        <p>Share this code with the receiver:</p>
-                        <div class="code-display" id="codeDisplay"></div>
-                        <div class="qr-code" id="qrCode"></div>
-                        <p style="margin-top: 4px;">Code expires in 5 minutes</p>
+                        <div class="code-top">
+                            <p class="code-label">Connection Code</p>
+                            <div class="code-row">
+                                <div class="code-display" id="codeDisplay"></div>
+                                <button class="code-copy-btn" onclick="copyCode()" id="copyBtn">Copy</button>
+                            </div>
+                            <p class="code-expires">Expires in 5 minutes</p>
+                        </div>
+                        <div class="code-bottom">
+                            <p class="qr-scan-hint" style="margin-bottom:14px;">or scan with the other device's camera</p>
+                            <div class="qr-code" id="qrCode"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -909,7 +1021,7 @@
             QRCode.toCanvas(
                 document.createElement('canvas'),
                 `${window.location.origin}?code=${connectionCode}`,
-                { width: 180 },
+                { width: 200, margin: 1 },
                 (err, canvas) => { if (!err) qrContainer.appendChild(canvas); }
             );
 
@@ -1138,6 +1250,16 @@
                 document.getElementById('codeInput').value = code;
             }
         });
+
+        // --- Copy code to clipboard ---
+        function copyCode() {
+            if (!connectionCode) return;
+            navigator.clipboard.writeText(connectionCode).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+            });
+        }
 
         // --- Service Worker ---
         if ('serviceWorker' in navigator) {
